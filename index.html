@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Inbox — App Store Review Monitor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #1A0D00;
+            --bg-main: #241200;
+            --bg-card: #2E1800;
+            --bg-card-hover: #3A2000;
+            --gold: #DDC165;
+            --gold-light: #FFE9A3;
+            --orange: #E5591C;
+            --orange-glow: #E5591C40;
+            --text: #E8DCC8;
+            --text-dim: #9A8B74;
+            --text-muted: #6B5D4D;
+            --green: #4ADE80;
+            --red: #F87171;
+            --blue: #60A5FA;
+            --purple: #A78BFA;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, #E5591C08 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, #DDC16508 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #DDC16520;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 24px var(--orange-glow);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gold-light);
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid #DDC16515;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #DDC16530;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gold-light);
+            line-height: 1;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.up { color: var(--green); }
+        .stat-change.down { color: var(--red); }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid #DDC16520;
+            color: var(--text-dim);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .filter-btn.active {
+            background: #DDC16515;
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .filter-btn .count {
+            background: #DDC16520;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: var(--bg-card);
+            border: 1px solid #DDC16520;
+            color: var(--text);
+            padding: 8px 16px 8px 36px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            width: 260px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px #DDC16510;
+        }
+
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* App Tabs */
+        .app-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .app-tab {
+            background: var(--bg-card);
+            border: 1px solid #DDC16515;
+            color: var(--text-dim);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-tab:hover {
+            background: var(--bg-card-hover);
+            color: var(--text);
+        }
+
+        .app-tab.active {
+            background: linear-gradient(135deg, #E5591C20, #DDC16510);
+            border-color: var(--orange);
+            color: var(--gold-light);
+            box-shadow: 0 0 16px var(--orange-glow);
+        }
+
+        .app-tab .app-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        /* Review List */
+        .review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .review-card {
+            background: var(--bg-card);
+            border: 1px solid #DDC16510;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .review-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 0 2px 2px 0;
+            transition: all 0.3s ease;
+        }
+
+        .review-card.sentiment-positive::before { background: var(--green); }
+        .review-card.sentiment-negative::before { background: var(--red); }
+        .review-card.sentiment-neutral::before { background: var(--text-muted); }
+        .review-card.sentiment-mixed::before { background: var(--orange); }
+
+        .review-card:hover {
+            border-color: #DDC16525;
+            transform: translateX(4px);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .review-card.unread {
+            border-color: #DDC16520;
+        }
+
+        .review-card.unread::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--orange-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .review-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .review-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .review-source {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .source-appstore { background: #60A5FA20; color: var(--blue); }
+        .source-g2 { background: #F8717120; color: var(--red); }
+        .source-trustpilot { background: #4ADE8020; color: var(--green); }
+        .source-producthunt { background: #E5591C20; color: var(--orange); }
+
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .star.filled { color: var(--gold); }
+
+        .review-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .review-author {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+            margin-bottom: 2px;
+        }
+
+        .review-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+        }
+
+        .review-body {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+            opacity: 0.85;
+        }
+
+        .review-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #DDC16510;
+        }
+
+        .review-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: #DDC16510;
+            color: var(--text-dim);
+            border: 1px solid #DDC16515;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: none;
+            border: 1px solid #DDC16520;
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: #DDC16508;
+        }
+
+        /* Summary Panel */
+        .summary-panel {
+            background: linear-gradient(135deg, var(--bg-card), #2E180080);
+            border: 1px solid #DDC16520;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--orange-glow), transparent);
+            pointer-events: none;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .summary-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gold-light);
+        }
+
+        .ai-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, var(--orange), var(--gold));
+            color: var(--bg-deep);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-content {
+            position: relative;
+        }
+
+        .summary-themes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .theme-card {
+            background: #1A0D0080;
+            border: 1px solid #DDC16515;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .theme-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-count {
+            font-size: 11px;
+            background: #DDC16520;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-dim);
+        }
+
+        .theme-desc {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .theme-sentiment {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .sentiment-bar {
+            flex: 1;
+            height: 4px;
+            background: #DDC16510;
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .sentiment-fill {
+            height: 100%;
+            transition: width 0.6s ease;
+        }
+
+        .sentiment-fill.positive { background: var(--green); }
+        .sentiment-fill.negative { background: var(--red); }
+        .sentiment-fill.neutral { background: var(--text-muted); }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--bg-main);
+            border: 1px solid #DDC16520;
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 560px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gold-light);
+            margin-bottom: 20px;
+        }
+
+        .modal label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid #DDC16520;
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .modal input:focus, .modal select:focus {
+            border-color: var(--gold);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--orange), #D04A10);
+            color: white;
+            box-shadow: 0 4px 16px var(--orange-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px var(--orange-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-dim);
+            border: 1px solid #DDC16520;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Rating distribution chart */
+        .rating-dist {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .rating-row .star-label {
+            color: var(--text-muted);
+            width: 24px;
+            text-align: right;
+        }
+
+        .rating-bar-bg {
+            flex: 1;
+            height: 6px;
+            background: #DDC16510;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .rating-bar-fill {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+
+        .rating-row .pct {
+            color: var(--text-muted);
+            width: 36px;
+            font-size: 11px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        /* Animations */
+        .review-card {
+            animation: slideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app { padding: 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .header-right { width: 100%; }
+            .search-box input { width: 100%; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .toolbar { flex-direction: column; }
+            .filter-group { width: 100%; overflow-x: auto; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #DDC16530; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #DDC16550; }
+
+        /* Loading shimmer */
+        .shimmer {
+            background: linear-gradient(90deg, var(--bg-card) 25%, #3A200040 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Trend sparkline */
+        .sparkline {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Refresh indicator */
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .refresh-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        /* Connection config */
+        .config-section {
+            background: var(--bg-card);
+            border: 1px solid #DDC16515;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .config-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #DDC16508;
+        }
+
+        .config-row:last-child { border-bottom: none; }
+
+        .config-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected { background: var(--green); box-shadow: 0 0 6px #4ADE8040; }
+        .status-dot.disconnected { background: var(--red); }
+        .status-dot.demo { background: var(--gold); }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">📬</div>
+                <div>
+                    <h1>Feedback Inbox</h1>
+                    <p>App Store Review Monitor</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span id="lastRefresh">Demo mode</span>
+                </div>
+                <button class="btn btn-secondary" onclick="openSettings()" title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar"></div>
+
+        <!-- AI Summary -->
+        <div class="summary-panel" id="summaryPanel"></div>
+
+        <!-- App Tabs -->
+        <div class="app-tabs" id="appTabs"></div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="filter-group" id="filterGroup"></div>
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="searchInput" placeholder="Search reviews..." oninput="handleSearch(this.value)">
+            </div>
+        </div>
+
+        <!-- Review List -->
+        <div class="review-list" id="reviewList"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>Settings</h2>
+
+            <div class="config-section">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Data Sources
+                </h3>
+                <div class="config-row">
+                    <div class="config-status">
+                        <span class="status-dot demo"></span>
+                        App Store Connect
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-muted)">Demo data</span>
+                </div>
+                <div class="config-row">
+                    <div class="config-status">
+                        <span class="status-dot demo"></span>
+                        G2 Reviews
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-muted)">Demo data</span>
+                </div>
+                <div class="config-row">
+                    <div class="config-status">
+                        <span class="status-dot demo"></span>
+                        Trustpilot
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-muted)">Demo data</span>
+                </div>
+            </div>
+
+            <label>App Store Connect API Key (JWT)</label>
+            <input type="password" id="apiKey" placeholder="Enter your API key...">
+
+            <label>Team ID</label>
+            <input type="text" id="teamId" placeholder="e.g., ABCD1234">
+
+            <label>Refresh Interval</label>
+            <select id="refreshInterval">
+                <option value="60">Every minute</option>
+                <option value="300">Every 5 minutes</option>
+                <option value="900">Every 15 minutes</option>
+                <option value="3600" selected>Every hour</option>
+                <option value="14400">Every 4 hours</option>
+            </select>
+
+            <label>Notification Sound</label>
+            <select id="notifSound">
+                <option value="none">None</option>
+                <option value="chime" selected>Chime</option>
+                <option value="ping">Ping</option>
+            </select>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== Demo Data ==========
+        const APPS = [
+            { id: 'all', name: 'All Apps', icon: '📊', color: '#DDC165' },
+            { id: 'evo', name: 'Evo Simulator', icon: '🧬', color: '#4ADE80' },
+            { id: 'focuskit', name: 'FocusKit', icon: '🎯', color: '#60A5FA' },
+            { id: 'pacekit', name: 'PaceKit', icon: '🏃', color: '#E5591C' },
+            { id: 'taxhacker', name: 'TaxHacker', icon: '💰', color: '#A78BFA' },
+        ];
+
+        const SOURCES = ['App Store', 'G2', 'Trustpilot', 'Product Hunt'];
+        const SOURCE_CLASSES = { 'App Store': 'source-appstore', 'G2': 'source-g2', 'Trustpilot': 'source-trustpilot', 'Product Hunt': 'source-producthunt' };
+
+        const THEMES = [
+            { title: 'Performance Issues', count: 12, desc: 'Users reporting slow load times and occasional crashes on older devices. Most common on iPad Air 2.', positive: 15, negative: 70, neutral: 15 },
+            { title: 'UI Praise', count: 23, desc: 'Overwhelmingly positive sentiment about the visual design, animations, and dark mode implementation.', positive: 88, negative: 5, neutral: 7 },
+            { title: 'Feature Requests', count: 8, desc: 'Recurring asks for data export (CSV), widget support, and Apple Watch companion app.', positive: 40, negative: 20, neutral: 40 },
+            { title: 'Onboarding Flow', count: 6, desc: 'Mixed feedback on the tutorial. Power users skip it; new users want more guidance.', positive: 35, negative: 35, neutral: 30 },
+        ];
+
+        const TAGS_POOL = ['bug', 'performance', 'ui', 'feature-request', 'onboarding', 'pricing', 'crash', 'design', 'ux', 'export', 'widget', 'dark-mode', 'animation', 'sync', 'data-loss'];
+
+        const REVIEW_TITLES = [
+            'Absolutely love the design!', 'Crashes on my iPad', 'Best app in its category',
+            'Needs work but promising', 'Perfect for my workflow', 'Missing basic features',
+            'Beautiful but buggy', 'Worth every penny', 'Replaced 3 other apps',
+            'Uninstalled after 5 minutes', 'My go-to daily app', 'Great concept, poor execution',
+            'Finally, an app that gets it', 'Too expensive for what it does', 'Life-changing utility',
+            'Solid update, but...', 'The dark mode is gorgeous', 'Wish it had widgets',
+            'Smooth animations everywhere', 'Data export would be nice', 'Apple Watch support please!',
+            'Clean and intuitive', 'Freezes during sync', 'One of my favorites this year',
+        ];
+
+        const REVIEW_BODIES = [
+            "I've been using this for a month now and it's completely changed how I manage my daily tasks. The interface is clean, the animations are smooth, and it just works. Haven't found anything else like it.",
+            "The app looks great but crashes whenever I try to open the settings page. Running iOS 19.2 on iPhone 16 Pro. Hope this gets fixed soon because I really want to keep using it.",
+            "I was skeptical at first but this has become an essential part of my workflow. The dark mode is especially well done — easy on the eyes during late-night sessions.",
+            "Missing some features I'd expect at this price point. No data export, no widget support, and the sync between devices is unreliable. The bones are good though.",
+            "As a developer myself, I can appreciate the attention to detail here. Every interaction feels intentional. The haptic feedback on buttons is a nice touch.",
+            "Tried multiple apps in this category and this is by far the best. The onboarding could be smoother but once you get past that, it's a delight to use.",
+            "Constant crashes since the latest update. Was a 5-star app before, dropping to 2 until this is fixed. Please look into the memory issues on iPad Air.",
+            "The weekly summary feature is incredibly useful. Saves me about an hour of manual review every Monday morning. AI analysis is surprisingly accurate.",
+            "Good app but needs polish. Some screens feel unfinished compared to the main dashboard. Consistency in the UI would go a long way.",
+            "Just wow. The animations, the color palette, the typography — everything is beautifully crafted. This is what all iOS apps should aspire to look like.",
+        ];
+
+        const AUTHORS = ['Alex M.', 'Sarah K.', 'Dev_Mike', 'JennyW2026', 'ProductGuy', 'iOS_fan99', 'MacUser42', 'AppReviewer', 'TechSavvy', 'NightOwlDev', 'DesignLover', 'PowerUser', 'CasualUser', 'BetaTester_J', 'StarReviewer'];
+
+        // Generate demo reviews
+        function generateReviews(count = 50) {
+            const reviews = [];
+            const now = Date.now();
+            for (let i = 0; i < count; i++) {
+                const rating = weightedRating();
+                const source = SOURCES[Math.floor(Math.random() * SOURCES.length)];
+                const app = APPS[1 + Math.floor(Math.random() * (APPS.length - 1))];
+                const daysAgo = Math.floor(Math.random() * 30);
+                const hoursAgo = Math.floor(Math.random() * 24);
+                const date = new Date(now - (daysAgo * 86400000 + hoursAgo * 3600000));
+                const sentiment = rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : Math.random() > 0.5 ? 'mixed' : 'neutral';
+                const numTags = 1 + Math.floor(Math.random() * 3);
+                const tags = shuffleArray([...TAGS_POOL]).slice(0, numTags);
+
+                reviews.push({
+                    id: i,
+                    title: REVIEW_TITLES[Math.floor(Math.random() * REVIEW_TITLES.length)],
+                    body: REVIEW_BODIES[Math.floor(Math.random() * REVIEW_BODIES.length)],
+                    author: AUTHORS[Math.floor(Math.random() * AUTHORS.length)],
+                    rating,
+                    source,
+                    app,
+                    date,
+                    sentiment,
+                    tags,
+                    unread: daysAgo < 3 && Math.random() > 0.4,
+                });
+            }
+            return reviews.sort((a, b) => b.date - a.date);
+        }
+
+        function weightedRating() {
+            const r = Math.random();
+            if (r < 0.35) return 5;
+            if (r < 0.55) return 4;
+            if (r < 0.70) return 3;
+            if (r < 0.85) return 2;
+            return 1;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ========== State ==========
+        let allReviews = generateReviews(60);
+        let activeApp = 'all';
+        let activeFilter = 'all';
+        let searchQuery = '';
+
+        // ========== Rendering ==========
+        function renderStats() {
+            const reviews = getFilteredReviews();
+            const totalReviews = reviews.length;
+            const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '0.0';
+            const unreadCount = reviews.filter(r => r.unread).length;
+            const positivePct = reviews.length ? Math.round(reviews.filter(r => r.sentiment === 'positive').length / reviews.length * 100) : 0;
+
+            const ratingCounts = [0, 0, 0, 0, 0];
+            reviews.forEach(r => ratingCounts[r.rating - 1]++);
+            const maxCount = Math.max(...ratingCounts, 1);
+
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Reviews</div>
+                    <div class="stat-value">${totalReviews}</div>
+                    <div class="stat-change up">↑ ${3 + Math.floor(Math.random() * 5)} this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Average Rating</div>
+                    <div class="stat-value">${avgRating}</div>
+                    <div class="rating-dist">
+                        ${[5, 4, 3, 2, 1].map(s => {
+                            const cnt = ratingCounts[s - 1];
+                            const pct = Math.round(cnt / Math.max(totalReviews, 1) * 100);
+                            return `<div class="rating-row">
+                                <span class="star-label">${s}★</span>
+                                <div class="rating-bar-bg"><div class="rating-bar-fill" style="width: ${(cnt / maxCount) * 100}%"></div></div>
+                                <span class="pct">${pct}%</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Unread</div>
+                    <div class="stat-value" style="color: ${unreadCount > 0 ? 'var(--orange)' : 'var(--gold-light)'}">${unreadCount}</div>
+                    <div class="stat-change" style="color: var(--text-muted)">${unreadCount > 0 ? 'Tap to review' : 'All caught up!'}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Positive Sentiment</div>
+                    <div class="stat-value" style="color: var(--green)">${positivePct}%</div>
+                    <div class="stat-change ${positivePct > 60 ? 'up' : 'down'}">${positivePct > 60 ? '↑' : '↓'} ${1 + Math.floor(Math.random() * 4)}% vs last month</div>
+                </div>
+            `;
+        }
+
+        function renderSummary() {
+            document.getElementById('summaryPanel').innerHTML = `
+                <div class="summary-header">
+                    <h2>Weekly Theme Summary</h2>
+                    <span class="ai-badge">AI Generated</span>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-themes">
+                        ${THEMES.map(t => `
+                            <div class="theme-card">
+                                <div class="theme-title">
+                                    ${t.title}
+                                    <span class="theme-count">${t.count} mentions</span>
+                                </div>
+                                <div class="theme-desc">${t.desc}</div>
+                                <div class="theme-sentiment">
+                                    <span style="color: var(--green); font-size: 11px;">${t.positive}%</span>
+                                    <div class="sentiment-bar">
+                                        <div class="sentiment-fill positive" style="width: ${t.positive}%"></div>
+                                        <div class="sentiment-fill neutral" style="width: ${t.neutral}%"></div>
+                                        <div class="sentiment-fill negative" style="width: ${t.negative}%"></div>
+                                    </div>
+                                    <span style="color: var(--red); font-size: 11px;">${t.negative}%</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAppTabs() {
+            document.getElementById('appTabs').innerHTML = APPS.map(app => `
+                <button class="app-tab ${activeApp === app.id ? 'active' : ''}" onclick="setApp('${app.id}')">
+                    <span class="app-icon" style="background: ${app.color}20; color: ${app.color}">${app.icon}</span>
+                    ${app.name}
+                </button>
+            `).join('');
+        }
+
+        function renderFilters() {
+            const reviews = getAppFilteredReviews();
+            const counts = {
+                all: reviews.length,
+                unread: reviews.filter(r => r.unread).length,
+                positive: reviews.filter(r => r.sentiment === 'positive').length,
+                negative: reviews.filter(r => r.sentiment === 'negative').length,
+                '1-3': reviews.filter(r => r.rating <= 3).length,
+            };
+
+            const filters = [
+                { id: 'all', label: 'All' },
+                { id: 'unread', label: 'Unread' },
+                { id: 'positive', label: 'Positive' },
+                { id: 'negative', label: 'Negative' },
+                { id: '1-3', label: '1-3 Stars' },
+            ];
+
+            document.getElementById('filterGroup').innerHTML = filters.map(f => `
+                <button class="filter-btn ${activeFilter === f.id ? 'active' : ''}" onclick="setFilter('${f.id}')">
+                    ${f.label}
+                    <span class="count">${counts[f.id]}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderReviews() {
+            const reviews = getFilteredReviews();
+            const container = document.getElementById('reviewList');
+
+            if (reviews.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                        <h3>No reviews match your filters</h3>
+                        <p>Try adjusting your search or filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = reviews.map((r, i) => `
+                <div class="review-card sentiment-${r.sentiment} ${r.unread ? 'unread' : ''}" style="animation-delay: ${i * 0.03}s" onclick="markRead(${r.id})">
+                    <div class="review-header">
+                        <div class="review-meta">
+                            <span class="review-source ${SOURCE_CLASSES[r.source]}">${r.source}</span>
+                            <div class="stars">
+                                ${[1, 2, 3, 4, 5].map(s => `<span class="star ${s <= r.rating ? 'filled' : ''}">★</span>`).join('')}
+                            </div>
+                            <span class="review-author">${r.author}</span>
+                        </div>
+                        <span class="review-date">${formatDate(r.date)}</span>
+                    </div>
+                    <div class="review-title">${r.title}</div>
+                    <div class="review-body">${r.body}</div>
+                    <div class="review-footer">
+                        <div class="review-tags">
+                            <span class="tag" style="background: ${r.app.color}15; color: ${r.app.color}; border-color: ${r.app.color}30">${r.app.icon} ${r.app.name}</span>
+                            ${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+                        <div class="review-actions">
+                            <button class="action-btn" onclick="event.stopPropagation();" title="Reply">
+                                ↩ Reply
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); archiveReview(${r.id})" title="Archive">
+                                ✓
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========== Filters ==========
+        function getAppFilteredReviews() {
+            let reviews = allReviews;
+            if (activeApp !== 'all') {
+                reviews = reviews.filter(r => r.app.id === activeApp);
+            }
+            return reviews;
+        }
+
+        function getFilteredReviews() {
+            let reviews = getAppFilteredReviews();
+
+            if (activeFilter === 'unread') reviews = reviews.filter(r => r.unread);
+            else if (activeFilter === 'positive') reviews = reviews.filter(r => r.sentiment === 'positive');
+            else if (activeFilter === 'negative') reviews = reviews.filter(r => r.sentiment === 'negative');
+            else if (activeFilter === '1-3') reviews = reviews.filter(r => r.rating <= 3);
+
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                reviews = reviews.filter(r =>
+                    r.title.toLowerCase().includes(q) ||
+                    r.body.toLowerCase().includes(q) ||
+                    r.author.toLowerCase().includes(q) ||
+                    r.tags.some(t => t.includes(q))
+                );
+            }
+
+            return reviews;
+        }
+
+        // ========== Actions ==========
+        function setApp(id) {
+            activeApp = id;
+            renderAppTabs();
+            renderFilters();
+            renderStats();
+            renderReviews();
+        }
+
+        function setFilter(id) {
+            activeFilter = id;
+            renderFilters();
+            renderReviews();
+        }
+
+        function handleSearch(query) {
+            searchQuery = query;
+            renderReviews();
+        }
+
+        function markRead(id) {
+            const review = allReviews.find(r => r.id === id);
+            if (review) {
+                review.unread = false;
+                renderStats();
+                renderFilters();
+                renderReviews();
+            }
+        }
+
+        function archiveReview(id) {
+            allReviews = allReviews.filter(r => r.id !== id);
+            renderStats();
+            renderFilters();
+            renderReviews();
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function saveSettings() {
+            const settings = {
+                apiKey: document.getElementById('apiKey').value,
+                teamId: document.getElementById('teamId').value,
+                refreshInterval: document.getElementById('refreshInterval').value,
+                notifSound: document.getElementById('notifSound').value,
+            };
+            localStorage.setItem('feedbackInboxSettings', JSON.stringify(settings));
+            closeSettings();
+        }
+
+        function loadSettings() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('feedbackInboxSettings'));
+                if (saved) {
+                    if (saved.apiKey) document.getElementById('apiKey').value = saved.apiKey;
+                    if (saved.teamId) document.getElementById('teamId').value = saved.teamId;
+                    if (saved.refreshInterval) document.getElementById('refreshInterval').value = saved.refreshInterval;
+                    if (saved.notifSound) document.getElementById('notifSound').value = saved.notifSound;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ========== Helpers ==========
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const mins = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // ========== Init ==========
+        function init() {
+            loadSettings();
+            renderStats();
+            renderSummary();
+            renderAppTabs();
+            renderFilters();
+            renderReviews();
+
+            // Close modal on overlay click
+            document.getElementById('settingsModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeSettings();
+            });
+
+            // Keyboard shortcut
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeSettings();
+                if (e.key === '/' && !e.target.closest('input')) {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
